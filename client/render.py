@@ -1,7 +1,13 @@
-from panda3d.core import CardMaker, NodePath, GeomNode, Point3
+from panda3d.core import NodePath, GeomNode, CardMaker, Point3
+from panda3d.core import Texture
+
 from copy import deepcopy
 
-cards = { # (top-left, top-right, bottom-right, bottom-left) tuples
+from blocks import Blocks
+
+FACES = ["top", "bottom", "left", "right", "front", "back"]
+
+CARDS = { # (top-left, top-right, bottom-right, bottom-left) tuples
     "front": (
       Point3(0.0, 0.0, 0.0),
       Point3(1.0, 0.0, 0.0),
@@ -40,7 +46,7 @@ cards = { # (top-left, top-right, bottom-right, bottom-left) tuples
     )
 }
 
-cardcolors = {
+CARDCOLORS = {
     "front": (1.0, 0.0, 0.0, 0.0), # red
     "back": (0.0, 1.0, 0.0, 0.0), # green
     "left": (0.0, 0.0, 1.0, 0.0), # blue
@@ -49,7 +55,19 @@ cardcolors = {
     "bottom": (1.0, 0.0, 1.0, 0.0) # magenta
 }
 
-def MakeCube(geom, x, y, z, scale=1.0, texpos=None, colors=False):
+def loadResources(loader):
+    """
+    Loads all resources and returns dictionary containing them.
+    """
+    res = {}
+    
+    res["blocktexture"] = loader.loadTexture("media/textures.png")
+    res["blocktexture"].setMinfilter(Texture.FTNearest)
+    res["blocktexture"].setMagfilter(Texture.FTNearest)
+    
+    return res
+
+def makeCube(geom, x, y, z, scale=1.0, texpos=None, colors=False):
     """
     Function that adds six cards to a GeomNode to form a cube
     
@@ -64,7 +82,7 @@ def MakeCube(geom, x, y, z, scale=1.0, texpos=None, colors=False):
     """
     cardmaker = CardMaker("cardmaker")
     
-    mycards = deepcopy(cards)
+    mycards = deepcopy(CARDS)
     for k, i in mycards.iteritems():
         points = i
         for j in points:
@@ -75,5 +93,27 @@ def MakeCube(geom, x, y, z, scale=1.0, texpos=None, colors=False):
         if texpos:
             cardmaker.setUvRange(*texpos[k])
         if colors:
-            cardmaker.setColor(*cardcolors[k])
+            cardmaker.setColor(*CARDCOLORS[k])
         geom.addGeomsFrom(cardmaker.generate())
+
+def makeChunkNode(chunk, texture):
+    """
+    Function that creates a NodePath containing a chunk from a block array
+    
+    chunk: Block array
+    texture: Texture map to use
+    """
+    geom = GeomNode("chunk")
+    for x in range(16):
+        for y in range(16):
+            for z in range(16):
+                btype = chunk[x][y][z]
+                if not btype in Blocks:
+                    btype = 2 # Unknown
+                if Blocks[btype]["visible"]:
+                    makeCube(geom, float(x), float(y), float(z), 
+                             texpos=Blocks[btype]["texcoords"])
+    chunk = NodePath(geom)
+    chunk.setTexture(texture)
+    chunk.flattenStrong()
+    return chunk
