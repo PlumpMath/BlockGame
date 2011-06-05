@@ -2,14 +2,18 @@ from math import pi, sin, cos
  
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
-
-from panda3d.core import NodePath, GeomNode, Point2
+from panda3d.core import NodePath, GeomNode, Point2, Texture
 
 from cube import MakeCube
 
 from random import randint
 
-def fletgress(tex):
+from threading import Thread
+
+from twisted.internet.task import LoopingCall
+from twisted.internet import reactor
+
+def makeChunk(tex, x, y, z):
     geom = GeomNode("fletgresschenk")
     texpos = {
         "front": (Point2(0, 0), Point2(1.0, 1.0)),
@@ -23,27 +27,25 @@ def fletgress(tex):
         for j in range(8):
             for k in range(8):
                 if randint(0,5) < 5:
-                    MakeCube(geom, float(i), float(j), float(k), texpos=texpos)
+                    MakeCube(geom, float(x+i), float(y+j), float(z+k), texpos=texpos)
     chunk = NodePath(geom)
     chunk.setTexture(tex)
+    chunk.flattenStrong()
     return chunk
 
 class MyApp(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
 
-        chunk = fletgress(self.loader.loadTexture("media/grass.png"))
-        chunk.reparentTo(self.render)
-        
-        #self.cube.setScale(0.25, 0.25, 0.25)
-        
-        #self.cube.setPos(-8, 42, 0)
-        #self.cube.setPos(0, 20, 0)
-        #self.cube.setPos(0, 0, 0)
+        self.setFrameRateMeter(True)
+
+        tex = self.loader.loadTexture("media/grass.png")
+        tex.setMagfilter(Texture.FTNearest)
+        self.chunk = makeChunk(tex, 0, 0, 0)
+        self.chunk.reparentTo(self.render)
  
-        #self.taskMgr.add(self.spinCameraTask, "SpinCameraTask")
+        self.taskMgr.add(self.spinCameraTask, "SpinCameraTask")
  
-    # Define a procedure to move the camera.
     def spinCameraTask(self, task):
         angleDegrees = task.time * 6.0
         angleRadians = angleDegrees * (pi / 180.0)
@@ -52,4 +54,5 @@ class MyApp(ShowBase):
         return Task.cont
  
 app = MyApp()
-app.run()
+LoopingCall(app.taskMgr.step).start(1 / 60)
+reactor.run()
