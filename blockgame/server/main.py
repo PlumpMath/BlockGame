@@ -6,5 +6,9 @@ class BlockGameProtocol(protocol.Protocol):
 class BlockGameFactory(protocol.ServerFactory):
     protocol = BlockGameProtocol
 
-reactor.listenTCP(54321, BlockGameFactory())
-reactor.run()
+def runServer():
+    reactor.listenTCP(54321, BlockGameFactory())
+    reactor.run()
+
+if __name__ == "__main__":
+    runServer()
