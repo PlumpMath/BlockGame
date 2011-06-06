@@ -1,14 +1,9 @@
-from twisted.internet import protocol, reactor
+from twisted.internet import reactor
+from server.factory import BlockGameServerFactory
 
-class BlockGameProtocol(protocol.Protocol):
-    pass
-
-class BlockGameFactory(protocol.ServerFactory):
-    protocol = BlockGameProtocol
-
-def runServer():
-    reactor.listenTCP(54321, BlockGameFactory())
-    reactor.run()
+def runServer(local):
+    factory = BlockGameServerFactory(local)
+    reactor.listenTCP(factory.port, factory)
 
 if __name__ == "__main__":
-    runServer()
+    runServer(False)

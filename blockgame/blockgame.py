@@ -2,12 +2,15 @@ from math import pi, sin, cos
  
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
-from direct.gui.DirectGui import *
 from panda3d.core import NodePath, GeomNode, Point2, TextNode
+
+from twisted.internet import reactor
 
 from numpy import zeros
 
 from render import loadResources, makeChunkNode
+
+from menu import Menu
 
 class BlockGame(ShowBase):
     def __init__(self):
@@ -31,45 +34,13 @@ class BlockGame(ShowBase):
  
         self.taskMgr.add(self.spinCameraTask, "SpinCameraTask")
         
-        self.makeMenu()
+        self.factory = None
+        self.protcol = None
         
-    def addressEntered(self, address):
-        self.menuFrame.hide()
-        if address:
-            self.menuStatus.show()
-            self.menuStatus["text"] = "Connecting to %s..." % address
-        else:
-            self.menuStatus.show()
-            self.menuStatus["text"] = "Loading server list..."
+        self.menu = Menu(self)
         
-    def makeMenu(self):
-        self.menuFrame = DirectFrame() # Menu Frame
-        self.menuTitle = DirectLabel(
-                            text="BlockGame",
-                            scale=0.3,
-                            pos=(0, 0, 0.4),
-                            frameColor=(0,0,0,0)
-                            )
-        self.menuTitle.reparentTo(self.menuFrame)
-        text = "Enter address or leave blank for server list:"
-        self.menuLabel = DirectLabel(
-                            text=text,
-                            scale=0.075,
-                            pos=(0, 0, 0.15),
-                            frameColor=(0,0,0,0)
-                            )
-        self.menuLabel.reparentTo(self.menuFrame)
-        self.menuAddress = DirectEntry(
-                            scale=0.1,
-                            pos=(-0.5, 0, -0.15),
-                            command=self.addressEntered
-                            )
-        self.menuAddress.reparentTo(self.menuFrame)
-        self.menuStatus = DirectLabel( # ("Connecting...")
-                            scale=0.1,
-                            frameColor=(0,0,0,0)
-                            )
-        self.menuStatus.hide()
+    def userExit(self):
+        reactor.stop()
 
     def spinCameraTask(self, task):
         angleDegrees = task.time * 6.0
